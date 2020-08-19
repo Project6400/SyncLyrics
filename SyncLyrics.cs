@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Amaoto;
 using Koioto.Support;
 using Koioto.Support.FileReader;
@@ -135,7 +133,7 @@ namespace SyncLyrics
             }
 
             var nextLyric = LyricAndTimings[SectionIndex][LyricIndex + 1];
-            
+
             if (accuTime >= nextLyric.Timing)
             {
                 // set texture
