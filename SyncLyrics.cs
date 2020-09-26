@@ -8,13 +8,13 @@ using Koioto.Support.FileReader;
 using Koioto.Support.Log;
 using Space.AioiLight.LRCDotNet;
 
-namespace SyncLyrics
+namespace Koioto.SamplePlugin.SyncLyrics
 {
     public class SyncLyrics : Koioto.Plugin.Overlay
     {
         public override string Name => "SyncLyrics";
         public override string[] Creator => new string[] { "AioiLight" };
-        public override string Version => "1.0";
+        public override string Version => "1.1";
         public override string Description => "Show sync lyrics (*.lrc) at playing screen.";
 
         public override void OnEnable()
@@ -39,7 +39,7 @@ namespace SyncLyrics
             Lyric = new LyRiCs[p.Sections.Length];
 
             // *.lrc parse phase
-            for (int section = 0; section < Lyric.Length; section++)
+            for (var section = 0; section < Lyric.Length; section++)
             {
                 // get path for file
                 var audioPath = chartInfo.Audio[section];
@@ -70,7 +70,7 @@ namespace SyncLyrics
 
             // Generation texture phase
             LyricAndTimings = new LyricAndTiming[Lyric.Length][];
-            for (int section = 0; section < Lyric.Length; section++)
+            for (var section = 0; section < Lyric.Length; section++)
             {
                 if (Lyric[section] == null)
                 {
@@ -80,7 +80,7 @@ namespace SyncLyrics
                 var lyric = Lyric[section].Lyrics;
                 LyricAndTimings[section] = new LyricAndTiming[lyric.Count()];
 
-                for (int l = 0; l < lyric.Count(); l++)
+                for (var l = 0; l < lyric.Count(); l++)
                 {
                     // convert ms to ns
                     var timing = (long)(lyric[l].Time.TotalMilliseconds * 1000.0);
@@ -117,6 +117,18 @@ namespace SyncLyrics
             // calc accurate time from lag
             var accuTime = sectionTickValue - Lag;
 
+            if (sectionTickValue < Counter)
+            {
+                // pick last lyric for measure moving
+                var last = LyricAndTimings[SectionIndex].Where(t => t.Timing <= accuTime).LastOrDefault();
+
+                Showing = last?.Tex;
+                LyricIndex = LyricAndTimings[SectionIndex].ToList().IndexOf(last);
+
+                Counter = sectionTickValue;
+                return;
+            }
+
             if (LyricAndTimings[SectionIndex].Length <= LyricIndex + 1)
             {
                 return;
@@ -140,6 +152,8 @@ namespace SyncLyrics
                 LyricIndex++;
                 Showing = nextLyric.Tex;
             }
+
+            Counter = sectionTickValue;
         }
 
         public override void OnChangedSection(int sectionIndex, int player, List<Chip> section)
@@ -172,6 +186,7 @@ namespace SyncLyrics
         private Size ScreenSize;
 
         private long Lag;
+        private long Counter;
     }
 
     internal class LyricAndTiming
